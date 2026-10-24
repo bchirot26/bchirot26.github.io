@@ -726,14 +726,32 @@ async function boot(){
   }
   const url = groupUrl(id);
   $('#gtitle').textContent = group.name;
-  $('#wa').href = 'https://wa.me/?text=' + encodeURIComponent(
-    `הימורי בחירות: ${group.name}\nכל אחד מנחש כמה כל מפלגה תקבל ומי ירכיב ממשלה. בערב הבחירות רואים מי הכי קרוב.\n${url}`);
+  $('#wa').href = 'https://wa.me/?text=' + encodeURIComponent(inviteText(group.name, url));
   $('#created').hidden = !justCreated; justCreated = false;
   me = blank(); mySaved = null; $('#share-mine').hidden = true;
   makeEditor($('#mine'), me, false);
   msg($('#msg'), '');
   showScreen('app');
   showTab('mine');
+}
+function inviteText(name, url){
+  return [
+    `*הימורי בחירות: ${name}*`,
+    '',
+    '*מה עושים:*',
+    '1. נכנסים לקישור, כותבים שם וקוד של 4 ספרות. את הקוד צריך כדי לעדכן אחר כך.',
+    '2. מחלקים 120 מנדטים בין המפלגות. מפלגה שלא עוברת את אחוז החסימה מקבלת 0, מפלגה שעוברת מקבלת לפחות 4.',
+    '3. בוחרים אילו מפלגות ירכיבו את הממשלה (לפחות 61) ומי יהיה ראש הממשלה.',
+    '4. שולחים. אפשר לעדכן עד 22:00 ביום הבחירות, ואז הכל ננעל.',
+    '',
+    '*איך קובעים מנצח:*',
+    'מנדטים: 100 נקודות, פחות נקודה על כל מנדט שפספסתם.',
+    'ראש ממשלה נכון: 25 נקודות.',
+    'קואליציה: עד 30 נקודות, לפי כמה הממשלה שבחרתם דומה לממשלה שתקום.',
+    'מי שצובר הכי הרבה נקודות מנצח. בשוויון מנצח מי שפספס פחות מנדטים.',
+    '',
+    url
+  ].join('\n');
 }
 async function createGroup(){
   const m = $('#home-msg'), name = $('#gname').value.trim();
