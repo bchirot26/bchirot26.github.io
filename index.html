@@ -149,6 +149,13 @@ input::placeholder{color:var(--label3)}
 .pm:has(input:checked)::after{content:'✓'}
 .pm:has(input:focus-visible){outline:3px solid var(--tint);outline-offset:-3px}
 .pm:active{background:var(--fill)}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;padding:8px 16px;background:var(--card);border-radius:14px;margin-bottom:14px;cursor:pointer}
+.switch-row span{font-size:17px}
+.switch-row small{display:block;color:var(--label2);font-size:13px;margin-top:2px}
+.ios-switch{-webkit-appearance:none;appearance:none;flex-shrink:0;position:relative;width:51px;height:31px;margin:0;border-radius:999px;background:var(--fill2);cursor:pointer;transition:background .25s var(--ease)}
+.ios-switch::before{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 3px 1px rgba(0,0,0,.06);transition:transform .25s var(--ease)}
+.ios-switch:checked{background:var(--green)}
+.ios-switch:checked::before{transform:translateX(20px)}
 .pm-other{position:relative;width:100%;height:46px;padding:0 16px;border:0;border-radius:0!important;background:transparent!important;box-shadow:none!important;border-top:.5px solid var(--sep)!important}
 
 /* הטבלה */
@@ -304,11 +311,13 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const byId = id => PARTIES.find(p => p.id === id);
 const deadline = new Date(CONFIG.DEADLINE);
 const locked = () => Date.now() >= deadline.getTime();
-const blank = () => ({seats:{}, coalition:[], pm:'', pmOther:''});
+const blank = () => ({seats:{}, coalition:[], pm:'', pmOther:'', noGov:false});
 const seatsTotal = seats => PARTIES.reduce((a,p) => a + (seats[p.id]||0), 0);
 const blocSeats = (seats, bloc) => PARTIES.filter(p => p.bloc === bloc).reduce((a,p) => a + (seats[p.id]||0), 0);
 const coalTotal = st => st.coalition.reduce((a,id) => a + (st.seats[id]||0), 0);
 const pmText = x => x.pm === 'other' ? (x.pmOther || 'מישהו אחר') : ((PMS.find(p => p.id === x.pm) || {}).label || 'לא נבחר');
+const NOGOV = 'אין ממשלה, הולכים לבחירות נוספות';
+const govText = x => x.noGov ? 'בחירות נוספות' : pmText(x);
 const pmKey = x => x.pm === 'other' ? 'other:' + (x.pmOther||'').trim() : x.pm;
 function idFor(name){
   const s = name.trim().replace(/\s+/g,' ');
@@ -433,12 +442,15 @@ function makeEditor(host, st, isAdmin){
     <div class="grp">האופוזיציה</div>
     <div class="slips">${PARTIES.filter(p => p.bloc === 'opp').map(slip).join('')}</div>
     <h3 class="sec">הממשלה</h3>
-    <p class="hint">סמנו את המפלגות שיהיו בקואליציה הבאה. צריך לפחות 61.</p>
-    <div class="chips"></div>
-    <h3 class="sec">ראש הממשלה</h3>
-    <div class="pms">
-      ${PMS.map(p => `<label class="pm"><input type="radio" name="${rn}" value="${p.id}" ${st.pm===p.id?'checked':''}>${esc(p.label)}</label>`).join('')}
-      <input type="text" class="pm-other" placeholder="מי?" maxlength="30" value="${esc(st.pmOther)}" ${st.pm==='other'?'':'hidden'}>
+    <label class="switch-row"><span>אין ממשלה<small>לא תקום ממשלה והולכים לבחירות נוספות</small></span><input type="checkbox" class="ios-switch nogov" role="switch" ${st.noGov ? 'checked' : ''}></label>
+    <div class="gov-part">
+      <p class="hint">סמנו את המפלגות שיהיו בקואליציה הבאה. צריך לפחות 61.</p>
+      <div class="chips"></div>
+      <h3 class="sec">ראש הממשלה</h3>
+      <div class="pms">
+        ${PMS.map(p => `<label class="pm"><input type="radio" name="${rn}" value="${p.id}" ${st.pm===p.id?'checked':''}>${esc(p.label)}</label>`).join('')}
+        <input type="text" class="pm-other" placeholder="מי?" maxlength="30" value="${esc(st.pmOther)}" ${st.pm==='other'?'':'hidden'}>
+      </div>
     </div>`;
 
   const refresh = () => {
@@ -450,8 +462,9 @@ function makeEditor(host, st, isAdmin){
     lp.textContent = left > 0 ? `נשארו ${left} מנדטים` : 'כל 120 שובצו';
     lp.className = 'pill left ' + (left === 0 ? 'ok' : '');
     const cs = coalTotal(st), cp = host.querySelector('.coal');
-    cp.textContent = `הממשלה שבחרת: ${cs}`;
-    cp.className = 'pill coal ' + (cs >= 61 ? 'ok' : '');
+    cp.textContent = st.noGov ? 'בחירות נוספות' : `הממשלה שבחרת: ${cs}`;
+    cp.className = 'pill coal ' + (!st.noGov && cs >= 61 ? 'ok' : '');
+    host.querySelector('.gov-part').hidden = !!st.noGov;
     host.querySelectorAll('.st[data-d="1"]').forEach(b => {
       const v = st.seats[b.dataset.id] || 0;
       b.disabled = left < (v === 0 ? min : 1) || v >= SLIDER_MAX;
@@ -503,6 +516,11 @@ function makeEditor(host, st, isAdmin){
   });
   host.addEventListener('change', e => {
     const t = e.target;
+    if (t.matches('.nogov')){
+      st.noGov = t.checked;
+      if (st.noGov) st.coalition = [];
+      refresh();
+    }
     if (t.type === 'radio'){
       st.pm = t.value;
       const o = host.querySelector('.pm-other');
@@ -522,7 +540,8 @@ function validateMine(){
   if (t < 120) return `חסרים ${120 - t} מנדטים כדי להגיע ל-120.`;
   const small = PARTIES.filter(p => (me.seats[p.id]||0) > 0 && me.seats[p.id] < MIN_SEATS);
   if (small.length) return `${small.map(p => p.name).join(', ')}: מפלגה שעוברת את אחוז החסימה מקבלת לפחות ${MIN_SEATS} מנדטים.`;
-  if (coalTotal(me) < 61) return `הממשלה שבחרתם מגיעה ל-${coalTotal(me)}. צריך לפחות 61.`;
+  if (me.noGov) return '';
+  if (coalTotal(me) < 61) return `הממשלה שבחרתם מגיעה ל-${coalTotal(me)}. צריך לפחות 61. אם לדעתכם לא תקום ממשלה, סמנו "אין ממשלה".`;
   if (!me.pm) return 'צריך לבחור ראש ממשלה.';
   if (me.pm === 'other' && !me.pmOther.trim()) return 'כתבו מי יהיה ראש הממשלה.';
   return '';
@@ -543,7 +562,8 @@ async function saveMine(){
     if (ex && ex.code !== code) return msg(m, 'השם הזה כבר תפוס. אם זה ההימור שלכם, הקלידו את הקוד שבחרתם בפעם הראשונה.', 'err');
     const seats = {};
     PARTIES.forEach(p => { if (me.seats[p.id]) seats[p.id] = me.seats[p.id]; });
-    const rec = {name, code, seats, coalition: [...me.coalition], pm: me.pm, pmOther: me.pmOther.trim(), at: new Date().toISOString()};
+    const ng = !!me.noGov;
+    const rec = {name, code, seats, coalition: ng ? [] : [...me.coalition], pm: ng ? '' : me.pm, pmOther: ng ? '' : me.pmOther.trim(), noGov: ng, at: new Date().toISOString()};
     await saveKey(key, JSON.stringify(rec));
     preds[key] = rec;
     mySaved = rec; $('#share-mine').hidden = false;
@@ -563,7 +583,7 @@ async function loadMine(){
     const ex = preds[idFor(name)];
     if (!ex) return msg(m, 'לא נמצא הימור בשם הזה.', 'err');
     if (ex.code !== code) return msg(m, 'הקוד לא תואם לשם.', 'err');
-    me = {seats: {...ex.seats}, coalition: [...ex.coalition], pm: ex.pm, pmOther: ex.pmOther || ''};
+    me = {seats: {...ex.seats}, coalition: [...ex.coalition], pm: ex.pm, pmOther: ex.pmOther || '', noGov: !!ex.noGov};
     makeEditor($('#mine'), me, false);
     mySaved = ex; $('#share-mine').hidden = false;
     msg(m, 'ההימור נטען. אפשר לערוך ולשלוח שוב.', 'ok');
@@ -575,9 +595,14 @@ function score(p, r){
   let err = 0;
   PARTIES.forEach(x => err += Math.abs((p.seats[x.id]||0) - (r.seats[x.id]||0)));
   const seatPts = Math.max(0, 100 - err);
-  const pmPts = r.pm ? (pmKey(p) === pmKey(r) ? 25 : 0) : 0;
-  let coalPts = 0;
-  if (r.coalition && r.coalition.length){
+  let pmPts = 0, coalPts = 0;
+  if (r.noGov){
+    // אין ממשלה: מי שהימר על זה מקבל את כל 55 הנקודות של הממשלה
+    if (p.noGov){ pmPts = 25; coalPts = 30; }
+  } else if (!p.noGov){
+    pmPts = r.pm ? (pmKey(p) === pmKey(r) ? 25 : 0) : 0;
+  }
+  if (!r.noGov && !p.noGov && r.coalition && r.coalition.length){
     const a = new Set(p.coalition), b = new Set(r.coalition);
     const inter = [...a].filter(x => b.has(x)).length;
     const uni = new Set([...a, ...b]).size;
@@ -617,13 +642,19 @@ async function betImage(p){
   });
   x.globalAlpha = 1; x.textAlign = 'center';
   const cs = p.coalition.reduce((a,id) => a + (p.seats[id]||0), 0);
-  x.fillStyle = INK; x.font = `700 104px ${D}`; x.fillText(String(cs), W / 2, oy + 86 * k);
-  x.fillStyle = MUTED; x.font = `700 32px ${B}`; x.fillText('מנדטים לממשלה', W / 2, oy + 97 * k);
+  if (p.noGov){
+    x.fillStyle = INK; x.font = `700 50px ${D}`; x.fillText('אין ממשלה', W / 2, oy + 85 * k);
+    x.fillStyle = MUTED; x.font = `700 26px ${B}`; x.fillText('הולכים לבחירות נוספות', W / 2, oy + 96 * k);
+  } else {
+    x.fillStyle = INK; x.font = `700 104px ${D}`; x.fillText(String(cs), W / 2, oy + 86 * k);
+    x.fillStyle = MUTED; x.font = `700 32px ${B}`; x.fillText('מנדטים לממשלה', W / 2, oy + 97 * k);
+  }
 
   // הקואליציה והאופוזיציה לפי ההימור
-  const a = cs, b = seatsTotal(p.seats) - cs, by = 790, bw = W - 120;
+  // בלי ממשלה מציגים את הקואליציה הנוכחית מול כל השאר
+  const a = p.noGov ? blocSeats(p.seats, 'coal') : cs, b = seatsTotal(p.seats) - a, by = 790, bw = W - 120;
   x.font = `700 30px ${B}`; x.fillStyle = INK;
-  x.textAlign = 'right'; x.fillText(`הקואליציה לפי ההימור ${a}`, W - 60, by);
+  x.textAlign = 'right'; x.fillText(`${p.noGov ? 'הקואליציה הנוכחית' : 'הקואליציה לפי ההימור'} ${a}`, W - 60, by);
   x.textAlign = 'left'; x.fillText(`האופוזיציה ${b}`, 60, by);
   x.fillStyle = EMPTY; x.fillRect(60, by + 16, bw, 24);
   x.fillStyle = '#5856D6'; x.fillRect(W - 60 - bw * a / 120, by + 16, bw * a / 120, 24);
@@ -647,7 +678,7 @@ async function betImage(p){
   // ראש הממשלה והממשלה
   let y = top + half * rh + 40;
   x.textAlign = 'right'; x.fillStyle = INK; x.font = `700 38px ${B}`;
-  x.fillText(`ראש הממשלה: ${pmText(p)}`, W - 60, y);
+  x.fillText(p.noGov ? NOGOV : `ראש הממשלה: ${pmText(p)}`, W - 60, y);
   if (p.coalition.length){
     x.fillStyle = MUTED; x.font = `400 30px ${B}`;
     const words = ('הממשלה: ' + p.coalition.map(id => byId(id).name).join(', ')).split(' ');
@@ -705,9 +736,9 @@ function renderBoard(){
   let html = '';
   if (results){
     const t = new Date(results.at).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-    html += `<h3 class="sec">דירוג</h3><p class="hint">לפי התוצאות שהוזנו ב-${t}. מנדטים: 100 נקודות פחות נקודה על כל מנדט סטייה. ראש ממשלה: 25. קואליציה: עד 30.</p>`;
+    html += `<h3 class="sec">דירוג</h3><p class="hint">לפי התוצאות שהוזנו ב-${t}. מנדטים: 100 נקודות פחות נקודה על כל מנדט סטייה. ראש ממשלה: 25. קואליציה: עד 30. אם לא קמה ממשלה, מי שהימר על בחירות נוספות מקבל 55.</p>`;
     html += `<div class="row"><div class="row-top"><span class="who">התוצאות כרגע</span></div>${bar(results.seats)}
-      <div class="meta"><span>הקואליציה הנוכחית: ${blocSeats(results.seats,'coal')}</span><span>האופוזיציה: ${blocSeats(results.seats,'opp')}</span></div></div>`;
+      <div class="meta"><span>הקואליציה הנוכחית: ${blocSeats(results.seats,'coal')}</span><span>האופוזיציה: ${blocSeats(results.seats,'opp')}</span>${results.noGov ? `<span>${NOGOV}</span>` : ''}</div></div>`;
   } else {
     html += `<h3 class="sec">${list.length} בקבוצה הימרו</h3><p class="hint">${locked() ? 'הדירוג יופיע כשיוזנו תוצאות.' : 'אפשר לעדכן הימורים עד 22:00 ביום הבחירות. הדירוג יופיע כשיוזנו תוצאות.'}</p>`;
   }
@@ -721,9 +752,11 @@ function renderBoard(){
       ${bar(r.p.seats)}
       ${seatList(r.p)}
       <div class="meta">
-        <span>ראש ממשלה: ${esc(pmText(r.p))}${results && results.pm ? (r.s.pmPts ? ' ✓' : ' ✗') : ''}</span>
+        ${r.p.noGov
+          ? `<span>${NOGOV}${results && (results.noGov || results.pm) ? (r.s.pmPts ? ' ✓' : ' ✗') : ''}</span>`
+          : `<span>ראש ממשלה: ${esc(pmText(r.p))}${results && (results.pm || results.noGov) ? (r.s.pmPts ? ' ✓' : ' ✗') : ''}</span>
         <span>קואליציה: ${coalTotal(r.p)}${results && results.coalition && results.coalition.length ? ` (${r.s.coalPts}/30)` : ''}</span>
-        <span>אופוזיציה: ${seatsTotal(r.p.seats) - coalTotal(r.p)}</span>
+        <span>אופוזיציה: ${seatsTotal(r.p.seats) - coalTotal(r.p)}</span>`}
         ${results ? `<span>סטייה: ${r.s.err} מנדטים</span>` : ''}
       </div>
       <button type="button" class="link row-share" data-share="${esc(r.key)}">שיתוף בוואטסאפ</button>
@@ -732,7 +765,7 @@ function renderBoard(){
   const avg = PARTIES.map(p => ({p, v: list.reduce((a,x) => a + (x.seats[p.id]||0), 0) / list.length}))
     .filter(x => x.v > 0).sort((a,b) => b.v - a.v);
   const pmVotes = {};
-  list.forEach(x => { const k = pmText(x); pmVotes[k] = (pmVotes[k]||0) + 1; });
+  list.forEach(x => { const k = govText(x); pmVotes[k] = (pmVotes[k]||0) + 1; });
   html += `<h3 class="sec">הכנסת לפי החברים</h3>
     <p class="hint">ממוצע המנדטים בכל ההימורים${results ? ', ומה יצא בפועל' : ''}.</p>
     <ul class="avg">${avg.map(x => `<li style="--c:${x.p.c}"><span>${esc(x.p.name)}${results ? ` <small class="hint">בפועל: ${results.seats[x.p.id]||0}</small>` : ''}</span><b>${x.v.toFixed(1)}</b></li>`).join('')}</ul>
@@ -746,7 +779,7 @@ function openAdmin(){ showScreen('admin'); $('#pin').focus(); }
 function enterAdmin(){
   if ($('#pin').value !== CONFIG.ADMIN_PIN) return msg($('#admin-msg'), 'קוד שגוי.', 'err');
   msg($('#admin-msg'), '');
-  if (results) admin = {seats: {...results.seats}, coalition: [...(results.coalition||[])], pm: results.pm || '', pmOther: results.pmOther || ''};
+  if (results) admin = {seats: {...results.seats}, coalition: [...(results.coalition||[])], pm: results.pm || '', pmOther: results.pmOther || '', noGov: !!results.noGov};
   $('#admin-gate').hidden = true; $('#admin-body').hidden = false;
   makeEditor($('#admin-ed'), admin, true);
 }
@@ -756,7 +789,8 @@ async function saveResults(){
   try{
     const seats = {};
     PARTIES.forEach(p => { if (admin.seats[p.id]) seats[p.id] = admin.seats[p.id]; });
-    results = {seats, coalition: [...admin.coalition], pm: admin.pm, pmOther: admin.pmOther.trim(), at: new Date().toISOString()};
+    const ng = !!admin.noGov;
+    results = {seats, coalition: ng ? [] : [...admin.coalition], pm: ng ? '' : admin.pm, pmOther: ng ? '' : admin.pmOther.trim(), noGov: ng, at: new Date().toISOString()};
     await saveKey('results', JSON.stringify(results));
     msg(m, 'התוצאות נשמרו.', 'ok');
     renderBoard();
@@ -812,13 +846,14 @@ function inviteText(name, url){
     '*מה עושים:*',
     '1. נכנסים לקישור, כותבים שם וקוד של 4 ספרות. את הקוד צריך כדי לעדכן אחר כך.',
     '2. מחלקים 120 מנדטים בין המפלגות. מפלגה שלא עוברת את אחוז החסימה מקבלת 0, מפלגה שעוברת מקבלת לפחות 4.',
-    '3. בוחרים אילו מפלגות ירכיבו את הממשלה (לפחות 61) ומי יהיה ראש הממשלה.',
+    '3. בוחרים אילו מפלגות ירכיבו את הממשלה (לפחות 61) ומי יהיה ראש הממשלה. אפשר גם להמר שלא תקום ממשלה והולכים לבחירות נוספות.',
     '4. שולחים. אפשר לעדכן עד 22:00 ביום הבחירות, ואז הכל ננעל.',
     '',
     '*איך קובעים מנצח:*',
     'מנדטים: 100 נקודות, פחות נקודה על כל מנדט שפספסתם.',
     'ראש ממשלה נכון: 25 נקודות.',
     'קואליציה: עד 30 נקודות, לפי כמה הממשלה שבחרתם דומה לממשלה שתקום.',
+    'אם לא קמה ממשלה והולכים לבחירות נוספות, מי שהימר על זה מקבל את כל 55 הנקודות.',
     'מי שצובר הכי הרבה נקודות מנצח. בשוויון מנצח מי שפספס פחות מנדטים.',
     '',
     url
