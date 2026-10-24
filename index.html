@@ -539,7 +539,9 @@ async function betImage(p){
 
   // מליאה
   const k = 4.8, ox = 60, oy = 220, fade = p.coalition.length > 0, fill = [];
-  PARTIES.forEach(q => { for (let i = 0; i < (p.seats[q.id]||0); i++) fill.push([q.c, fade && !p.coalition.includes(q.id) ? .28 : 1]); });
+  // מפלגות הקואליציה לפי ההימור מימין, כמו בפס שמתחת
+  [...PARTIES.filter(q => p.coalition.includes(q.id)), ...PARTIES.filter(q => !p.coalition.includes(q.id))]
+    .forEach(q => { for (let i = 0; i < (p.seats[q.id]||0); i++) fill.push([q.c, fade && !p.coalition.includes(q.id) ? .28 : 1]); });
   SEATS.forEach((s,i) => {
     const [c,o] = fill[i] || [EMPTY, 1];
     x.globalAlpha = o; x.fillStyle = c;
@@ -550,15 +552,13 @@ async function betImage(p){
   x.fillStyle = INK; x.font = `400 104px ${D}`; x.fillText(String(cs), W / 2, oy + 86 * k);
   x.fillStyle = MUTED; x.font = `700 32px ${B}`; x.fillText('מנדטים לממשלה', W / 2, oy + 97 * k);
 
-  // קואליציה נוכחית מול אופוזיציה
-  const a = blocSeats(p.seats, 'coal'), b = blocSeats(p.seats, 'opp'), n = blocSeats(p.seats, 'none'), by = 790, bw = W - 120;
+  // הקואליציה והאופוזיציה לפי ההימור
+  const a = cs, b = seatsTotal(p.seats) - cs, by = 790, bw = W - 120;
   x.font = `700 30px ${B}`; x.fillStyle = INK;
-  x.textAlign = 'right'; x.fillText(`הקואליציה הנוכחית ${a}`, W - 60, by);
+  x.textAlign = 'right'; x.fillText(`הקואליציה לפי ההימור ${a}`, W - 60, by);
   x.textAlign = 'left'; x.fillText(`האופוזיציה ${b}`, 60, by);
-  if (n){ x.textAlign = 'center'; x.fillStyle = MUTED; x.font = `700 26px ${B}`; x.fillText(`מחוץ לגושים ${n}`, W / 2, by); }
   x.fillStyle = EMPTY; x.fillRect(60, by + 16, bw, 24);
   x.fillStyle = '#33406B'; x.fillRect(W - 60 - bw * a / 120, by + 16, bw * a / 120, 24);
-  x.fillStyle = '#C9A43E'; x.fillRect(W - 60 - bw * (a + n) / 120, by + 16, bw * n / 120, 24);
   x.fillStyle = '#97A3C6'; x.fillRect(60, by + 16, bw * b / 120, 24);
   x.fillStyle = '#B93A25'; x.fillRect(W - 60 - bw * 61 / 120 - 2, by + 8, 4, 40);
 
@@ -649,10 +649,9 @@ function renderBoard(){
       ${bar(r.p.seats)}
       ${seatList(r.p)}
       <div class="meta">
-        <span>הקואליציה הנוכחית: ${blocSeats(r.p.seats,'coal')}</span>
-        <span>האופוזיציה: ${blocSeats(r.p.seats,'opp')}</span>
         <span>ראש ממשלה: ${esc(pmText(r.p))}${results && results.pm ? (r.s.pmPts ? ' ✓' : ' ✗') : ''}</span>
-        <span>הממשלה שלו: ${r.p.coalition.reduce((a,id) => a + (r.p.seats[id]||0), 0)}${results && results.coalition && results.coalition.length ? ` (${r.s.coalPts}/30)` : ''}</span>
+        <span>קואליציה: ${coalTotal(r.p)}${results && results.coalition && results.coalition.length ? ` (${r.s.coalPts}/30)` : ''}</span>
+        <span>אופוזיציה: ${seatsTotal(r.p.seats) - coalTotal(r.p)}</span>
         ${results ? `<span>סטייה: ${r.s.err} מנדטים</span>` : ''}
       </div>
       <button type="button" class="link row-share" data-share="${esc(r.key)}">שיתוף בוואטסאפ</button>
