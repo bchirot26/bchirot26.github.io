@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הימורי הבחירות 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Secular+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --paper:#F3F5F9; --card:#FFFFFF; --ink:#18203A; --muted:#5E6782; --line:#D9DEE8;
+  --accent:#2E59D9; --accent-ink:#FFFFFF; --ok:#1C7C54; --err:#B93A25; --empty:#D5DAE4; --soft:#E8EDF7;
+  --bloc-a:#33406B; --bloc-b:#97A3C6; --bloc-n:#C9A43E;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --paper:#121933; --card:#1B2446; --ink:#ECEFF7; --muted:#A3ACC6; --line:#2E3A63;
+    --accent:#7D9BFF; --accent-ink:#0F1530; --ok:#5CCB98; --err:#FF8A73; --empty:#33406B; --soft:#232E57;
+    --bloc-a:#D3DAEE; --bloc-b:#56648F; --bloc-n:#9C8236;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Assistant',system-ui,-apple-system,sans-serif;font-size:17px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:24px 16px 80px}
+h1{font-family:'Secular One','Assistant',sans-serif;font-weight:400;font-size:clamp(30px,8vw,44px);line-height:1.05;margin:0}
+.sub{color:var(--muted);margin:6px 0 0}
+.clock{display:inline-block;margin-top:12px;padding:6px 14px;border-radius:999px;background:var(--soft);font-weight:700}
+.tabs{display:flex;gap:4px;margin:22px 0 8px;border-bottom:2px solid var(--line)}
+.tab{background:none;border:0;padding:10px 14px;font:inherit;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+[hidden]{display:none!important}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.idrow{display:grid;grid-template-columns:1fr 130px;gap:10px;margin-top:14px;align-items:end}
+.field{display:grid;gap:4px}
+.field label{font-weight:600;font-size:15px}
+input[type=text],input[type=password]{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
+.loadmine{margin-top:6px}
+
+/* לוח עליון קבוע */
+.hemi-wrap{position:sticky;top:0;z-index:5;background:var(--paper);margin:14px -16px 0;padding:8px 16px 10px;border-bottom:1px solid var(--line)}
+.hemi{display:block;width:100%;max-height:112px;margin:auto}
+.hemi-num{font-family:'Secular One','Assistant',sans-serif;font-size:22px;fill:var(--ink)}
+.hemi-lbl{font-size:8px;fill:var(--muted)}
+.blocs{max-width:440px;margin:8px auto 0}
+.bloc-labels{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;font-size:13px;font-weight:600;line-height:1.2}
+.bloc-labels span{display:flex;flex-direction:column;white-space:nowrap}
+.bloc-labels span:last-child{align-items:flex-end;text-align:left}
+.bloc-labels .mid{align-items:center}
+.bloc-labels b{font-family:'Secular One','Assistant',sans-serif;font-weight:400;font-size:22px;order:-1}
+.bloc-labels .maj{color:var(--ok)}
+.bloc-labels .mid{color:var(--muted)}
+.bloc-bar{position:relative;display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--empty);margin-top:2px}
+.bloc-bar span{display:block;height:100%}
+.bloc-bar .a{background:var(--bloc-a)} .bloc-bar .n{background:var(--bloc-n)} .bloc-bar .b{background:var(--bloc-b);margin-inline-start:auto}
+.bloc-bar i{position:absolute;top:0;bottom:0;inset-inline-start:50.83%;width:2px;background:var(--err)}
+.bloc-note{text-align:center;font-size:13px;color:var(--muted)}
+.tally{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pill{padding:2px 12px;border-radius:999px;font-weight:700;font-size:14px;background:var(--soft)}
+.pill.ok{color:var(--ok)} .pill.err{color:var(--err)}
+
+.sec{font-family:'Secular One','Assistant',sans-serif;font-weight:400;font-size:23px;margin:28px 0 4px}
+.grp{font-weight:700;font-size:16px;margin:18px 0 6px;color:var(--muted)}
+.hint{color:var(--muted);margin:0 0 10px;font-size:15px}
+.slips{display:grid;gap:8px}
+.slip{background:var(--card);border:1px solid var(--line);border-inline-start:7px solid var(--c);border-radius:6px;padding:8px 12px 6px}
+.slip-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.slip-txt{display:grid;min-width:0}
+.slip-txt b{font-size:17px}
+.slip-txt small{color:var(--muted);font-size:13px;line-height:1.35}
+.seatnum{font-family:'Secular One','Assistant',sans-serif;font-size:30px;line-height:1;min-width:1.6em;text-align:center}
+.seatnum.zero{color:var(--muted)}
+.slider{display:flex;align-items:center;gap:8px;margin-top:4px}
+.slider input[type=range]{flex:1;min-width:0;height:34px;margin:0;accent-color:var(--c);cursor:pointer}
+.st{width:34px;height:34px;flex-shrink:0;border-radius:8px;border:1.5px solid var(--line);background:var(--soft);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+.st:disabled{opacity:.35;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-weight:600;padding:8px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:#fff}
+.pms{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pm{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;font-weight:600}
+.pm:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.pm-other{grid-column:1/-1}
+.primary{width:100%;margin-top:26px;padding:14px;font:inherit;font-size:19px;font-weight:700;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.primary:disabled{opacity:.5;cursor:default}
+.msg{margin-top:12px;font-weight:600;min-height:1.5em}
+.msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+.link{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:15px;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.row-top{display:flex;align-items:baseline;gap:10px}
+.rank{font-family:'Secular One','Assistant',sans-serif;font-size:22px;color:var(--muted);min-width:1.4em}
+.who{font-weight:700;font-size:18px;flex:1}
+.pts{font-family:'Secular One','Assistant',sans-serif;font-size:24px}
+.pts small{font-family:'Assistant',sans-serif;font-size:14px;color:var(--muted);margin-inline-start:4px}
+.bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--empty);margin:8px 0}
+.bar span{display:block;height:100%}
+.meta{display:flex;flex-wrap:wrap;gap:2px 16px;color:var(--muted);font-size:14px}
+.avg{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.avg li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-inline-start:7px solid var(--c);border-radius:6px;padding:6px 12px}
+.avg b{font-family:'Secular One','Assistant',sans-serif;font-weight:400;font-size:20px}
+.empty{color:var(--muted);text-align:center;padding:30px 0}
+.names span{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:0 10px;margin:0 0 6px 6px;font-weight:600}
+footer{margin-top:44px;text-align:center}
+.seatlist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.seatlist span{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:1px 10px 1px 8px;font-size:14px;font-weight:600}
+.seatlist i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.seatlist span.in{background:var(--soft);border-color:var(--c)}
+.seatlist b{font-family:'Secular One','Assistant',sans-serif;font-weight:400;font-size:16px}
+.row-share{margin-top:8px}
+.secondary{width:100%;margin-top:10px;padding:12px;font:inherit;font-size:17px;font-weight:700;border-radius:10px;background:#1FAF55;color:#fff;border:0;cursor:pointer}
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(10,14,30,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet-card{background:var(--card);border-radius:14px;padding:16px;width:min(440px,100%);max-height:100%;overflow:auto}
+.sheet-card img{display:block;width:100%;max-height:58vh;object-fit:contain;border-radius:8px;border:1px solid var(--line)}
+.sheet-card .link{display:block;margin:12px auto 0}
+.groupbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.groupbar small{display:block;color:var(--muted);font-size:13px}
+.groupbar b{font-family:'Secular One','Assistant',sans-serif;font-weight:400;font-size:22px;line-height:1.2}
+.share{display:flex;align-items:center;gap:14px}
+.wa{display:inline-block;background:#1FAF55;color:#fff;text-decoration:none;font-weight:700;padding:9px 16px;border-radius:999px}
+.created{margin:8px 0 0;color:var(--ok);font-weight:600}
+@media (prefers-reduced-motion:no-preference){.hemi circle{transition:opacity .2s}.bloc-bar span{transition:width .25s}}
+@media (max-width:420px){.pms{grid-template-columns:1fr}.idrow{grid-template-columns:1fr 110px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>הימורי הבחירות שלנו</h1>
+    <p class="sub">הכנסת ה-26. יום שלישי, 27 באוקטובר</p>
+    <span class="clock" id="clock"></span>
+  </header>
+
+  <section id="home" hidden>
+    <h2 class="sec">פותחים קבוצה</h2>
+    <p class="hint">נותנים שם לקבוצה ושולחים את הקישור לחברים. לכל קבוצה יש טבלה משלה.</p>
+    <div class="field"><label for="gname">שם הקבוצה</label><input type="text" id="gname" maxlength="40" placeholder="למשל: החבר'ה מהעבודה"></div>
+    <button type="button" class="primary" id="create-group">פתיחת קבוצה</button>
+    <p class="msg" id="home-msg" role="status"></p>
+    <p class="hint">קיבלתם קישור לקבוצה? פותחים אותו ונכנסים ישר.</p>
+  </section>
+
+  <div id="app" hidden>
+  <div class="groupbar">
+    <div><small>הקבוצה</small><b id="gtitle"></b></div>
+    <div class="share"><a class="wa" id="wa" target="_blank" rel="noopener">שליחה בוואטסאפ</a><button type="button" class="link" id="copy">העתקת קישור</button></div>
+  </div>
+  <p class="created" id="created" hidden>הקבוצה נפתחה. שלחו את הקישור לחברים, ואז מלאו את ההימור שלכם.</p>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-mine" aria-selected="true">ההימור שלי</button>
+    <button class="tab" role="tab" id="tab-board" aria-selected="false">הטבלה</button>
+  </nav>
+
+  <section id="panel-mine">
+    <fieldset id="mine-fs">
+      <div class="idrow">
+        <div class="field"><label for="name">השם שלך</label><input type="text" id="name" autocomplete="nickname" maxlength="30"></div>
+        <div class="field"><label for="code">קוד, 4 ספרות</label><input type="password" id="code" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+      </div>
+      <div class="loadmine"><button type="button" class="link" id="load-mine">כבר הימרת? לטעינת ההימור שלך לעריכה</button></div>
+      <div id="mine"></div>
+      <button type="button" class="primary" id="save">שליחת ההימור</button>
+    </fieldset>
+    <p class="msg" id="msg" role="status"></p>
+    <button type="button" class="secondary" id="share-mine" hidden>שיתוף ההימור בוואטסאפ</button>
+  </section>
+
+  <section id="panel-board" hidden>
+    <div id="board"><p class="empty">טוען…</p></div>
+  </section>
+  </div>
+
+  <section id="panel-admin" hidden>
+    <h2 class="sec">הזנת תוצאות אמת</h2>
+    <div id="admin-gate">
+      <div class="field"><label for="pin">קוד מנהל</label><input type="password" id="pin" inputmode="numeric"></div>
+      <button type="button" class="primary" id="pin-go">כניסה</button>
+    </div>
+    <div id="admin-body" hidden>
+      <p class="hint">מזינים את המנדטים לפי ועדת הבחירות. אפשר לעדכן כמה פעמים שרוצים במהלך הערב. את הקואליציה וראש הממשלה ממלאים כשזה ברור.</p>
+      <div id="admin-ed"></div>
+      <button type="button" class="primary" id="save-results">שמירת התוצאות</button>
+    </div>
+    <p class="msg" id="admin-msg" role="status"></p>
+    <button type="button" class="link" id="admin-back" style="margin-top:16px">חזרה</button>
+  </section>
+
+  <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="שיתוף ההימור">
+    <div class="sheet-card">
+      <img id="sheet-img" alt="תמונת ההימור">
+      <button type="button" class="secondary" id="sheet-send">שליחה בוואטסאפ</button>
+      <p class="msg" id="sheet-msg" role="status"></p>
+      <button type="button" class="link" id="sheet-close">סגירה</button>
+    </div>
+  </div>
+
+  <footer><button type="button" class="link" id="open-admin">הזנת תוצאות (מנהל)</button></footer>
+</div>
+
+<script>
+/* ===== הגדרות ===== */
+const CONFIG = {
+  SHEET_URL: 'https://script.google.com/macros/s/AKfycbwuMQVWPi_zMcE3BRuZsGEMWregDjpgpsw4ZzqyO2HiTua1CdKOjh5-E686oE_6X2DXaQ/exec',
+  ADMIN_PIN: '2026',                      // להחליף לפני שמפיצים
+  DEADLINE: '2026-10-27T22:00:00+02:00'   // סגירת הקלפיות. אחרי זה ההימורים ננעלים ונחשפים
+};
+const SLIDER_MAX = 50;       // סוף הסליידר
+const MIN_SEATS = 4;         // מפלגה שעוברת את אחוז החסימה מקבלת לפחות 4
+
+/* bloc: 'coal' = הקואליציה היוצאת, 'opp' = האופוזיציה, 'none' = מחוץ לגושים. הסדר כאן הוא גם סדר המושבים במליאה (מימין לשמאל) */
+const PARTIES = [
+  {id:'likud',     name:'הליכוד',                lead:'בנימין נתניהו',           c:'#2453B3', bloc:'coal'},
+  {id:'rz',        name:'הציונות הדתית–זהות',    lead:"בצלאל סמוטריץ'",          c:'#8E4F74', bloc:'coal'},
+  {id:'otzma',     name:'עוצמה יהודית',          lead:'איתמר בן גביר',           c:'#E8912D', bloc:'coal'},
+  {id:'shas',      name:'ש"ס',                   lead:'אריה דרעי',              c:'#3D4466', bloc:'coal'},
+  {id:'utj',       name:'יהדות התורה',           lead:'יעקב אשר',               c:'#7A5C46', bloc:'coal'},
+  {id:'amcha',     name:'עמך ישראל',             lead:'עופר וינטר',              c:'#A88418', bloc:'none'},
+  {id:'miluim',    name:'המילואימניקים–הכלכלית', lead:'יועז הנדל וירון זליכה',  c:'#6E8A3E', bloc:'opp'},
+  {id:'yb',        name:'ישראל ביתנו',           lead:'אביגדור ליברמן',          c:'#4C8BE0', bloc:'opp'},
+  {id:'beyachad',  name:'ביחד',                  lead:'נפתלי בנט ויאיר לפיד',   c:'#6A4BC4', bloc:'opp'},
+  {id:'yashar',    name:'ישר!',                  lead:'גדי איזנקוט',             c:'#0E9AA7', bloc:'opp'},
+  {id:'democrats', name:'הדמוקרטים',             lead:'יאיר גולן',              c:'#D9467D', bloc:'opp'},
+  {id:'raam',      name:'רע"מ',                  lead:'מנסור עבאס',             c:'#2E9E5B', bloc:'opp'},
+  {id:'joint',     name:'הרשימה המשותפת',        lead:'חד"ש–תע"ל–בל"ד',          c:'#D7263D', bloc:'opp'}
+];
+const PMS = [
+  {id:'netanyahu', label:'בנימין נתניהו'},
+  {id:'eisenkot',  label:'גדי איזנקוט'},
+  {id:'bennett',   label:'נפתלי בנט'},
+  {id:'other',     label:'מישהו אחר'}
+];
+
+/* ===== עזרים ===== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const byId = id => PARTIES.find(p => p.id === id);
+const deadline = new Date(CONFIG.DEADLINE);
+const locked = () => Date.now() >= deadline.getTime();
+const blank = () => ({seats:{}, coalition:[], pm:'', pmOther:''});
+const seatsTotal = seats => PARTIES.reduce((a,p) => a + (seats[p.id]||0), 0);
+const blocSeats = (seats, bloc) => PARTIES.filter(p => p.bloc === bloc).reduce((a,p) => a + (seats[p.id]||0), 0);
+const coalTotal = st => st.coalition.reduce((a,id) => a + (st.seats[id]||0), 0);
+const pmText = x => x.pm === 'other' ? (x.pmOther || 'מישהו אחר') : ((PMS.find(p => p.id === x.pm) || {}).label || 'לא נבחר');
+const pmKey = x => x.pm === 'other' ? 'other:' + (x.pmOther||'').trim() : x.pm;
+function idFor(name){
+  const s = name.trim().replace(/\s+/g,' ');
+  let h = 5381;
+  for (const ch of s) h = ((h * 33) ^ ch.codePointAt(0)) >>> 0;
+  return predPrefix() + h.toString(36);
+}
+
+/* ===== אחסון: Google Sheets או אחסון משותף של Claude ===== */
+let group = null, preds = {}, results = null;
+const predPrefix = () => `g:${group.id}:p:`;
+const parse = v => { try{ return JSON.parse(v); }catch(e){ return null; } };
+async function listPrefix(prefix){
+  const out = {};
+  if (CONFIG.SHEET_URL){
+    const r = await fetch(CONFIG.SHEET_URL + '?prefix=' + encodeURIComponent(prefix));
+    const all = await r.json();
+    for (const [k,v] of Object.entries(all)) if (k.startsWith(prefix)){ const x = parse(v); if (x) out[k] = x; }
+    return out;
+  }
+  if (!window.storage) throw new Error('no-storage');
+  const res = await window.storage.list(prefix, true);
+  const keys = ((res && res.keys) || []).map(k => typeof k === 'string' ? k : k.key);
+  await Promise.all(keys.map(async k => {
+    try{ const g = await window.storage.get(k, true); const x = g && parse(g.value); if (x) out[k] = x; }catch(e){}
+  }));
+  return out;
+}
+async function getKey(key){
+  if (CONFIG.SHEET_URL) return (await listPrefix(key))[key] || null;
+  if (!window.storage) throw new Error('no-storage');
+  try{ const g = await window.storage.get(key, true); return g ? parse(g.value) : null; }catch(e){ return null; }
+}
+async function loadAll(){
+  const [p, r] = await Promise.all([listPrefix(predPrefix()), getKey('results')]);
+  preds = p; results = r;
+}
+async function saveKey(key, value){
+  if (CONFIG.SHEET_URL){
+    const r = await fetch(CONFIG.SHEET_URL, {method:'POST', body: JSON.stringify({key, value})});
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'save');
+    return;
+  }
+  if (!window.storage) throw new Error('no-storage');
+  const r = await window.storage.set(key, value, true);
+  if (!r) throw new Error('save');
+}
+
+/* ===== המליאה: 120 מושבים ===== */
+const SEATS = (() => {
+  const R = 6, rin = 38, rout = 92, N = 120;
+  const radii = [...Array(R)].map((_,i) => rin + i * (rout - rin) / (R - 1));
+  const rs = radii.reduce((a,b) => a + b, 0);
+  const counts = radii.map(r => Math.round(N * r / rs));
+  counts[R-1] += N - counts.reduce((a,b) => a + b, 0);
+  const pts = [];
+  radii.forEach((r,i) => {
+    const n = counts[i];
+    for (let j = 0; j < n; j++){
+      const a = Math.PI * j / (n - 1);
+      pts.push({a, x: 100 + r * Math.cos(a), y: 98 - r * Math.sin(a)});
+    }
+  });
+  return pts.sort((p,q) => p.a - q.a);
+})();
+function drawHemi(svg, st){
+  const fade = st.coalition.length > 0;
+  const fill = [];
+  PARTIES.forEach(p => {
+    const n = st.seats[p.id] || 0;
+    const o = fade && !st.coalition.includes(p.id) ? .28 : 1;
+    for (let i = 0; i < n; i++) fill.push([p.c, o]);
+  });
+  svg.innerHTML = SEATS.map((s,i) => {
+    const [c,o] = fill[i] || ['var(--empty)', 1];
+    return `<circle cx="${s.x.toFixed(2)}" cy="${s.y.toFixed(2)}" r="4.1" style="fill:${c}" opacity="${o}"/>`;
+  }).join('') +
+  `<text x="100" y="85" text-anchor="middle" class="hemi-num">${seatsTotal(st.seats)}</text>` +
+  `<text x="100" y="96" text-anchor="middle" class="hemi-lbl">מתוך 120</text>`;
+}
+function drawBlocs(host, seats){
+  const a = blocSeats(seats, 'coal'), b = blocSeats(seats, 'opp'), n = blocSeats(seats, 'none');
+  host.innerHTML = `
+    <div class="bloc-labels">
+      <span class="${a >= 61 ? 'maj' : ''}">הקואליציה הנוכחית<b>${a}</b></span>
+      <span class="mid">${n ? `מחוץ לגושים<b>${n}</b>` : ''}</span>
+      <span class="${b >= 61 ? 'maj' : ''}">האופוזיציה<b>${b}</b></span>
+    </div>
+    <div class="bloc-bar" aria-hidden="true"><span class="a" style="width:${a/120*100}%"></span><span class="n" style="width:${n/120*100}%"></span><span class="b" style="width:${b/120*100}%"></span><i></i></div>
+    <div class="bloc-note">הקו האדום: 61</div>`;
+}
+
+/* ===== עורך הימור (משמש גם להזנת תוצאות) ===== */
+function makeEditor(host, st, isAdmin){
+  const rn = 'pm-' + host.id;
+  const min = isAdmin ? 1 : MIN_SEATS;
+  const slip = p => `
+    <div class="slip" style="--c:${p.c}">
+      <div class="slip-head">
+        <div class="slip-txt"><b>${esc(p.name)}</b><small>${esc(p.lead)}</small></div>
+        <output class="seatnum" data-num="${p.id}">${st.seats[p.id]||0}</output>
+      </div>
+      <div class="slider">
+        <button type="button" class="st" data-id="${p.id}" data-d="-1" aria-label="מנדט פחות ל${esc(p.name)}">−</button>
+        <input type="range" min="0" max="${SLIDER_MAX}" step="1" data-id="${p.id}" value="${st.seats[p.id]||0}" aria-label="מנדטים ל${esc(p.name)}">
+        <button type="button" class="st" data-id="${p.id}" data-d="1" aria-label="עוד מנדט ל${esc(p.name)}">+</button>
+      </div>
+    </div>`;
+  host.innerHTML = `
+    <div class="hemi-wrap">
+      <svg class="hemi" viewBox="0 0 200 104" role="img" aria-label="חלוקת המנדטים"></svg>
+      <div class="blocs"></div>
+      <div class="tally"><span class="pill left"></span><span class="pill coal"></span></div>
+    </div>
+    <h3 class="sec">מנדטים</h3>
+    <p class="hint">${isAdmin ? 'המנדטים הרשמיים של כל מפלגה.' : 'מחלקים בדיוק 120. מפלגה שלא עוברת את אחוז החסימה מקבלת 0, ומפלגה שעוברת מקבלת לפחות 4.'}</p>
+    <div class="grp">הקואליציה הנוכחית</div>
+    <div class="slips">${PARTIES.filter(p => p.bloc === 'coal').map(slip).join('')}</div>
+    <div class="grp">מחוץ לגושים</div>
+    <div class="slips">${PARTIES.filter(p => p.bloc === 'none').map(slip).join('')}</div>
+    <div class="grp">האופוזיציה</div>
+    <div class="slips">${PARTIES.filter(p => p.bloc === 'opp').map(slip).join('')}</div>
+    <h3 class="sec">הממשלה</h3>
+    <p class="hint">סמנו את המפלגות שיהיו בקואליציה הבאה. צריך לפחות 61.</p>
+    <div class="chips"></div>
+    <h3 class="sec">ראש הממשלה</h3>
+    <div class="pms">
+      ${PMS.map(p => `<label class="pm"><input type="radio" name="${rn}" value="${p.id}" ${st.pm===p.id?'checked':''}>${esc(p.label)}</label>`).join('')}
+      <input type="text" class="pm-other" placeholder="מי?" maxlength="30" value="${esc(st.pmOther)}" ${st.pm==='other'?'':'hidden'}>
+    </div>`;
+
+  const refresh = () => {
+    st.coalition = st.coalition.filter(id => (st.seats[id]||0) > 0);
+    drawHemi(host.querySelector('.hemi'), st);
+    drawBlocs(host.querySelector('.blocs'), st.seats);
+    const left = 120 - seatsTotal(st.seats);
+    const lp = host.querySelector('.left');
+    lp.textContent = left > 0 ? `נשארו ${left} מנדטים` : 'כל 120 שובצו';
+    lp.className = 'pill left ' + (left === 0 ? 'ok' : '');
+    const cs = coalTotal(st), cp = host.querySelector('.coal');
+    cp.textContent = `הממשלה שבחרת: ${cs}`;
+    cp.className = 'pill coal ' + (cs >= 61 ? 'ok' : '');
+    host.querySelectorAll('.st[data-d="1"]').forEach(b => {
+      const v = st.seats[b.dataset.id] || 0;
+      b.disabled = left < (v === 0 ? min : 1) || v >= SLIDER_MAX;
+    });
+    host.querySelectorAll('.seatnum').forEach(o => {
+      const v = st.seats[o.dataset.num] || 0;
+      o.textContent = v; o.classList.toggle('zero', !v);
+    });
+    host.querySelectorAll('.slider input').forEach(r => { r.value = st.seats[r.dataset.id] || 0; });
+    host.querySelector('.chips').innerHTML = PARTIES.filter(p => st.seats[p.id] > 0).map(p =>
+      `<button type="button" class="chip" style="--c:${p.c}" data-id="${p.id}" aria-pressed="${st.coalition.includes(p.id)}">${esc(p.name)} ${st.seats[p.id]}</button>`
+    ).join('') || '<span class="hint">קודם מחלקים מנדטים.</span>';
+  };
+  // אף פעם לא יותר מ-120: הערך נחתך למה שנשאר פנוי
+  const setSeats = (id, v) => {
+    v = isNaN(v) ? 0 : Math.floor(v);
+    if (v > 0 && v < min) v = v >= min / 2 ? min : 0;       // מתחת לאחוז החסימה: 0 או 4
+    const room = 120 - seatsTotal(st.seats) + (st.seats[id] || 0);
+    v = Math.max(0, Math.min(room, SLIDER_MAX, v));
+    if (v > 0 && v < min) v = 0;                            // אין מקום להכניס מפלגה חדשה
+    if (v) st.seats[id] = v; else delete st.seats[id];
+    return v;
+  };
+
+  host.addEventListener('click', e => {
+    const b = e.target.closest('.st');
+    if (b){
+      const id = b.dataset.id, d = +b.dataset.d;
+      let v = st.seats[id] || 0;
+      if (d > 0) v = v === 0 ? min : v + 1;
+      else v = v === min ? 0 : v - 1;
+      setSeats(id, v);
+      refresh(); return;
+    }
+    const c = e.target.closest('.chip');
+    if (c){
+      const id = c.dataset.id;
+      st.coalition = st.coalition.includes(id) ? st.coalition.filter(x => x !== id) : [...st.coalition, id];
+      refresh();
+    }
+  });
+  host.addEventListener('input', e => {
+    const t = e.target;
+    if (t.matches('.slider input')){ setSeats(t.dataset.id, parseInt(t.value, 10)); refresh(); }
+    else if (t.matches('.pm-other')) st.pmOther = t.value;
+  });
+  host.addEventListener('change', e => {
+    const t = e.target;
+    if (t.type === 'radio'){
+      st.pm = t.value;
+      const o = host.querySelector('.pm-other');
+      o.hidden = t.value !== 'other';
+      if (!o.hidden) o.focus();
+    }
+  });
+  refresh();
+}
+
+/* ===== ההימור שלי ===== */
+let me = blank(), mySaved = null;
+const msg = (el, text, kind) => { el.textContent = text; el.className = 'msg ' + (kind || ''); };
+
+function validateMine(){
+  const t = seatsTotal(me.seats);
+  if (t < 120) return `חסרים ${120 - t} מנדטים כדי להגיע ל-120.`;
+  const small = PARTIES.filter(p => (me.seats[p.id]||0) > 0 && me.seats[p.id] < MIN_SEATS);
+  if (small.length) return `${small.map(p => p.name).join(', ')}: מפלגה שעוברת את אחוז החסימה מקבלת לפחות ${MIN_SEATS} מנדטים.`;
+  if (coalTotal(me) < 61) return `הממשלה שבחרתם מגיעה ל-${coalTotal(me)}. צריך לפחות 61.`;
+  if (!me.pm) return 'צריך לבחור ראש ממשלה.';
+  if (me.pm === 'other' && !me.pmOther.trim()) return 'כתבו מי יהיה ראש הממשלה.';
+  return '';
+}
+
+async function saveMine(){
+  const m = $('#msg');
+  const name = $('#name').value.trim(), code = $('#code').value.trim();
+  if (locked()) return msg(m, 'הקלפיות נסגרו. אי אפשר לשנות הימורים.', 'err');
+  if (!name) return msg(m, 'כתבו את השם שלכם.', 'err');
+  if (!/^\d{4}$/.test(code)) return msg(m, 'הקוד האישי צריך להיות 4 ספרות. תזדקקו לו כדי לערוך אחר כך.', 'err');
+  const err = validateMine();
+  if (err) return msg(m, err, 'err');
+  const btn = $('#save'); btn.disabled = true;
+  try{
+    await loadAll();
+    const key = idFor(name), ex = preds[key];
+    if (ex && ex.code !== code) return msg(m, 'השם הזה כבר תפוס. אם זה ההימור שלכם, הקלידו את הקוד שבחרתם בפעם הראשונה.', 'err');
+    const seats = {};
+    PARTIES.forEach(p => { if (me.seats[p.id]) seats[p.id] = me.seats[p.id]; });
+    const rec = {name, code, seats, coalition: [...me.coalition], pm: me.pm, pmOther: me.pmOther.trim(), at: new Date().toISOString()};
+    await saveKey(key, JSON.stringify(rec));
+    preds[key] = rec;
+    mySaved = rec; $('#share-mine').hidden = false;
+    msg(m, ex ? 'ההימור עודכן.' : 'ההימור נשמר. אפשר לעדכן עד סגירת הקלפיות עם אותו שם וקוד.', 'ok');
+    renderBoard();
+  }catch(e){
+    msg(m, 'השמירה נכשלה. בדקו את החיבור ונסו שוב.', 'err');
+  }finally{ btn.disabled = false; }
+}
+
+async function loadMine(){
+  const m = $('#msg');
+  const name = $('#name').value.trim(), code = $('#code').value.trim();
+  if (!name || !code) return msg(m, 'כתבו שם וקוד, ואז לחצו שוב.', 'err');
+  try{
+    await loadAll();
+    const ex = preds[idFor(name)];
+    if (!ex) return msg(m, 'לא נמצא הימור בשם הזה.', 'err');
+    if (ex.code !== code) return msg(m, 'הקוד לא תואם לשם.', 'err');
+    me = {seats: {...ex.seats}, coalition: [...ex.coalition], pm: ex.pm, pmOther: ex.pmOther || ''};
+    makeEditor($('#mine'), me, false);
+    mySaved = ex; $('#share-mine').hidden = false;
+    msg(m, 'ההימור נטען. אפשר לערוך ולשלוח שוב.', 'ok');
+  }catch(e){ msg(m, 'הטעינה נכשלה. נסו שוב.', 'err'); }
+}
+
+/* ===== ניקוד ===== */
+function score(p, r){
+  let err = 0;
+  PARTIES.forEach(x => err += Math.abs((p.seats[x.id]||0) - (r.seats[x.id]||0)));
+  const seatPts = Math.max(0, 100 - err);
+  const pmPts = r.pm ? (pmKey(p) === pmKey(r) ? 25 : 0) : 0;
+  let coalPts = 0;
+  if (r.coalition && r.coalition.length){
+    const a = new Set(p.coalition), b = new Set(r.coalition);
+    const inter = [...a].filter(x => b.has(x)).length;
+    const uni = new Set([...a, ...b]).size;
+    coalPts = Math.round(30 * inter / uni);
+  }
+  return {err, seatPts, pmPts, coalPts, total: seatPts + pmPts + coalPts};
+}
+const bar = seats => `<div class="bar">${PARTIES.filter(p => seats[p.id]).map(p =>
+  `<span style="width:${seats[p.id] / 120 * 100}%;background:${p.c}" title="${esc(p.name)} ${seats[p.id]}"></span>`).join('')}</div>`;
+
+const seatList = p => `<div class="seatlist">${PARTIES.filter(x => p.seats[x.id]).sort((a,b) => p.seats[b.id] - p.seats[a.id]).map(x =>
+  `<span class="${p.coalition.includes(x.id) ? 'in' : ''}" style="--c:${x.c}"><i></i>${esc(x.name)} <b>${p.seats[x.id]}</b></span>`).join('')}</div>`;
+
+/* ===== תמונת ההימור לשיתוף ===== */
+async function betImage(p){
+  try{ await Promise.all([document.fonts.load('400 72px "Secular One"'), document.fonts.load('700 34px "Assistant"'), document.fonts.load('400 30px "Assistant"')]); }catch(e){}
+  const W = 1080, H = 1500, cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  const INK = '#18203A', MUTED = '#5E6782', EMPTY = '#D5DAE4';
+  const D = '"Secular One", "Assistant", sans-serif', B = '"Assistant", system-ui, sans-serif';
+  x.direction = 'rtl';
+  x.fillStyle = '#F3F5F9'; x.fillRect(0, 0, W, H);
+  x.fillStyle = INK; x.textAlign = 'right';
+  x.font = `400 72px ${D}`; x.fillText(`ההימור של ${p.name}`, W - 60, 120);
+  x.fillStyle = MUTED; x.font = `400 32px ${B}`;
+  x.fillText(`בחירות לכנסת ה-26${group ? `, קבוצת ${group.name}` : ''}`, W - 60, 172);
+
+  // מליאה
+  const k = 4.8, ox = 60, oy = 220, fade = p.coalition.length > 0, fill = [];
+  PARTIES.forEach(q => { for (let i = 0; i < (p.seats[q.id]||0); i++) fill.push([q.c, fade && !p.coalition.includes(q.id) ? .28 : 1]); });
+  SEATS.forEach((s,i) => {
+    const [c,o] = fill[i] || [EMPTY, 1];
+    x.globalAlpha = o; x.fillStyle = c;
+    x.beginPath(); x.arc(ox + s.x * k, oy + s.y * k, 19.5, 0, Math.PI * 2); x.fill();
+  });
+  x.globalAlpha = 1; x.textAlign = 'center';
+  const cs = p.coalition.reduce((a,id) => a + (p.seats[id]||0), 0);
+  x.fillStyle = INK; x.font = `400 104px ${D}`; x.fillText(String(cs), W / 2, oy + 86 * k);
+  x.fillStyle = MUTED; x.font = `700 32px ${B}`; x.fillText('מנדטים לממשלה', W / 2, oy + 97 * k);
+
+  // קואליציה נוכחית מול אופוזיציה
+  const a = blocSeats(p.seats, 'coal'), b = blocSeats(p.seats, 'opp'), n = blocSeats(p.seats, 'none'), by = 790, bw = W - 120;
+  x.font = `700 30px ${B}`; x.fillStyle = INK;
+  x.textAlign = 'right'; x.fillText(`הקואליציה הנוכחית ${a}`, W - 60, by);
+  x.textAlign = 'left'; x.fillText(`האופוזיציה ${b}`, 60, by);
+  if (n){ x.textAlign = 'center'; x.fillStyle = MUTED; x.font = `700 26px ${B}`; x.fillText(`מחוץ לגושים ${n}`, W / 2, by); }
+  x.fillStyle = EMPTY; x.fillRect(60, by + 16, bw, 24);
+  x.fillStyle = '#33406B'; x.fillRect(W - 60 - bw * a / 120, by + 16, bw * a / 120, 24);
+  x.fillStyle = '#C9A43E'; x.fillRect(W - 60 - bw * (a + n) / 120, by + 16, bw * n / 120, 24);
+  x.fillStyle = '#97A3C6'; x.fillRect(60, by + 16, bw * b / 120, 24);
+  x.fillStyle = '#B93A25'; x.fillRect(W - 60 - bw * 61 / 120 - 2, by + 8, 4, 40);
+
+  // רשימת מפלגות בשני טורים
+  const list = PARTIES.filter(q => p.seats[q.id]).sort((m,n) => p.seats[n.id] - p.seats[m.id]);
+  const half = Math.ceil(list.length / 2), top = 900, rh = 62, colW = (W - 120 - 40) / 2;
+  list.forEach((q,i) => {
+    const right = i < half ? W - 60 : W - 60 - colW - 40, y = top + (i % half) * rh;
+    const inGov = p.coalition.includes(q.id);
+    x.fillStyle = q.c; x.globalAlpha = inGov || !fade ? 1 : .35;
+    x.beginPath(); x.arc(right - 16, y - 11, 16, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1;
+    x.fillStyle = INK; x.textAlign = 'right'; x.font = `${inGov ? 700 : 400} 32px ${B}`;
+    x.fillText(q.name, right - 44, y);
+    x.textAlign = 'left'; x.font = `400 40px ${D}`;
+    x.fillText(String(p.seats[q.id]), right - colW, y + 2);
+  });
+
+  // ראש הממשלה והממשלה
+  let y = top + half * rh + 40;
+  x.textAlign = 'right'; x.fillStyle = INK; x.font = `700 38px ${B}`;
+  x.fillText(`ראש הממשלה: ${pmText(p)}`, W - 60, y);
+  if (p.coalition.length){
+    x.fillStyle = MUTED; x.font = `400 30px ${B}`;
+    const words = ('הממשלה: ' + p.coalition.map(id => byId(id).name).join(', ')).split(' ');
+    let line = ''; y += 50;
+    words.forEach(w => {
+      const t = line ? line + ' ' + w : w;
+      if (x.measureText(t).width > W - 120 && line){ x.fillText(line, W - 60, y); line = w; y += 42; }
+      else line = t;
+    });
+    if (line) x.fillText(line, W - 60, y);
+  }
+  return new Promise(res => cv.toBlob(res, 'image/png'));
+}
+
+let shareFile = null, shareText = '';
+async function openShare(p){
+  const sm = $('#sheet-msg'); msg(sm, '');
+  const blob = await betImage(p);
+  shareFile = new File([blob], 'election-bet.png', {type: 'image/png'});
+  shareText = `ההימור של ${p.name} לבחירות.` + (group ? ` רוצים להמר גם? ${groupUrl(group.id)}` : '');
+  const img = $('#sheet-img');
+  if (img.src) URL.revokeObjectURL(img.src);
+  img.src = URL.createObjectURL(blob);
+  const native = navigator.canShare && navigator.canShare({files: [shareFile]});
+  $('#sheet-send').textContent = native ? 'שליחה בוואטסאפ' : 'הורדת התמונה ופתיחת וואטסאפ';
+  $('#sheet').hidden = false;
+}
+async function sendShare(){
+  const sm = $('#sheet-msg');
+  if (navigator.canShare && navigator.canShare({files: [shareFile]})){
+    try{ await navigator.share({files: [shareFile], text: shareText}); return; }
+    catch(e){ if (e.name === 'AbortError') return; }
+  }
+  // גיבוי: מורידים את התמונה ופותחים וואטסאפ עם הטקסט
+  const a = document.createElement('a');
+  a.href = $('#sheet-img').src; a.download = 'election-bet.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  window.open('https://wa.me/?text=' + encodeURIComponent(shareText), '_blank');
+  msg(sm, 'התמונה ירדה למכשיר. מצרפים אותה להודעה בוואטסאפ.', 'ok');
+}
+
+/* ===== הטבלה ===== */
+function renderBoard(){
+  const b = $('#board');
+  const list = Object.entries(preds).map(([key,p]) => ({...p, key})).sort((x,y) => x.name.localeCompare(y.name, 'he'));
+  if (!list.length){ b.innerHTML = '<p class="empty">עוד אין הימורים בקבוצה. שלחו את הקישור לחברים.</p>'; return; }
+
+  let rows = list.map(p => ({p, key: p.key, s: results ? score(p, results) : null}));
+  if (results) rows.sort((x,y) => y.s.total - x.s.total || x.s.err - y.s.err);
+
+  let html = '';
+  if (results){
+    const t = new Date(results.at).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+    html += `<h3 class="sec">דירוג</h3><p class="hint">לפי התוצאות שהוזנו ב-${t}. מנדטים: 100 נקודות פחות נקודה על כל מנדט סטייה. ראש ממשלה: 25. קואליציה: עד 30.</p>`;
+    html += `<div class="row"><div class="row-top"><span class="who">התוצאות כרגע</span></div>${bar(results.seats)}
+      <div class="meta"><span>הקואליציה הנוכחית: ${blocSeats(results.seats,'coal')}</span><span>האופוזיציה: ${blocSeats(results.seats,'opp')}</span></div></div>`;
+  } else {
+    html += `<h3 class="sec">${list.length} בקבוצה הימרו</h3><p class="hint">${locked() ? 'הדירוג יופיע כשיוזנו תוצאות.' : 'אפשר לעדכן הימורים עד 22:00 ביום הבחירות. הדירוג יופיע כשיוזנו תוצאות.'}</p>`;
+  }
+  html += rows.map((r,i) => `
+    <div class="row">
+      <div class="row-top">
+        ${results ? `<span class="rank">${i + 1}</span>` : ''}
+        <span class="who">${esc(r.p.name)}</span>
+        ${results ? `<span class="pts">${r.s.total}<small>נק׳</small></span>` : ''}
+      </div>
+      ${bar(r.p.seats)}
+      ${seatList(r.p)}
+      <div class="meta">
+        <span>הקואליציה הנוכחית: ${blocSeats(r.p.seats,'coal')}</span>
+        <span>האופוזיציה: ${blocSeats(r.p.seats,'opp')}</span>
+        <span>ראש ממשלה: ${esc(pmText(r.p))}${results && results.pm ? (r.s.pmPts ? ' ✓' : ' ✗') : ''}</span>
+        <span>הממשלה שלו: ${r.p.coalition.reduce((a,id) => a + (r.p.seats[id]||0), 0)}${results && results.coalition && results.coalition.length ? ` (${r.s.coalPts}/30)` : ''}</span>
+        ${results ? `<span>סטייה: ${r.s.err} מנדטים</span>` : ''}
+      </div>
+      <button type="button" class="link row-share" data-share="${esc(r.key)}">שיתוף בוואטסאפ</button>
+    </div>`).join('');
+
+  const avg = PARTIES.map(p => ({p, v: list.reduce((a,x) => a + (x.seats[p.id]||0), 0) / list.length}))
+    .filter(x => x.v > 0).sort((a,b) => b.v - a.v);
+  const pmVotes = {};
+  list.forEach(x => { const k = pmText(x); pmVotes[k] = (pmVotes[k]||0) + 1; });
+  html += `<h3 class="sec">הכנסת לפי החברים</h3>
+    <p class="hint">ממוצע המנדטים בכל ההימורים${results ? ', ומה יצא בפועל' : ''}.</p>
+    <ul class="avg">${avg.map(x => `<li style="--c:${x.p.c}"><span>${esc(x.p.name)}${results ? ` <small class="hint">בפועל: ${results.seats[x.p.id]||0}</small>` : ''}</span><b>${x.v.toFixed(1)}</b></li>`).join('')}</ul>
+    <p class="hint" style="margin-top:12px">ראש הממשלה לפי החברים: ${Object.entries(pmVotes).sort((a,b) => b[1] - a[1]).map(([k,v]) => `${esc(k)} ${v}`).join(', ')}</p>`;
+  b.innerHTML = html;
+}
+
+/* ===== מנהל ===== */
+let admin = blank();
+function openAdmin(){ showScreen('admin'); $('#pin').focus(); }
+function enterAdmin(){
+  if ($('#pin').value !== CONFIG.ADMIN_PIN) return msg($('#admin-msg'), 'קוד שגוי.', 'err');
+  msg($('#admin-msg'), '');
+  if (results) admin = {seats: {...results.seats}, coalition: [...(results.coalition||[])], pm: results.pm || '', pmOther: results.pmOther || ''};
+  $('#admin-gate').hidden = true; $('#admin-body').hidden = false;
+  makeEditor($('#admin-ed'), admin, true);
+}
+async function saveResults(){
+  const m = $('#admin-msg'), btn = $('#save-results');
+  btn.disabled = true;
+  try{
+    const seats = {};
+    PARTIES.forEach(p => { if (admin.seats[p.id]) seats[p.id] = admin.seats[p.id]; });
+    results = {seats, coalition: [...admin.coalition], pm: admin.pm, pmOther: admin.pmOther.trim(), at: new Date().toISOString()};
+    await saveKey('results', JSON.stringify(results));
+    msg(m, 'התוצאות נשמרו.', 'ok');
+    renderBoard();
+  }catch(e){ msg(m, 'השמירה נכשלה. נסו שוב.', 'err'); }
+  finally{ btn.disabled = false; }
+}
+
+/* ===== קבוצות, לשוניות, הפעלה ===== */
+let current = 'mine', justCreated = false;
+function newGroupId(){
+  const a = 'abcdefghijkmnpqrstuvwxyz23456789';
+  return [...crypto.getRandomValues(new Uint8Array(6))].map(x => a[x % a.length]).join('');
+}
+const hashGroup = () => { const m = location.hash.match(/g=([a-z0-9]{6})/); return m ? m[1] : null; };
+const groupUrl = id => location.origin + location.pathname + location.search + '#g=' + id;
+
+function showScreen(which){
+  $('#home').hidden = which !== 'home';
+  $('#app').hidden = which !== 'app';
+  $('#panel-admin').hidden = which !== 'admin';
+}
+function showHome(note){
+  group = null;
+  showScreen('home');
+  msg($('#home-msg'), note || '', note ? 'err' : '');
+}
+async function boot(){
+  const id = hashGroup();
+  if (!id) return showHome();
+  try{
+    const g = await getKey('grp:' + id);
+    if (!g) return showHome('הקבוצה לא נמצאה. בדקו את הקישור, או פתחו קבוצה חדשה.');
+    group = {id, name: g.name};
+  }catch(e){
+    return showHome(e.message === 'no-storage'
+      ? 'אין חיבור לאחסון. צריך להגדיר SHEET_URL בקובץ, או לפתוח את האתר מתוך Claude.'
+      : 'הטעינה נכשלה. בדקו את החיבור ורעננו.');
+  }
+  const url = groupUrl(id);
+  $('#gtitle').textContent = group.name;
+  $('#wa').href = 'https://wa.me/?text=' + encodeURIComponent(
+    `הימורי בחירות: ${group.name}\nכל אחד מנחש כמה כל מפלגה תקבל ומי ירכיב ממשלה. בערב הבחירות רואים מי הכי קרוב.\n${url}`);
+  $('#created').hidden = !justCreated; justCreated = false;
+  me = blank(); mySaved = null; $('#share-mine').hidden = true;
+  makeEditor($('#mine'), me, false);
+  msg($('#msg'), '');
+  showScreen('app');
+  showTab('mine');
+}
+async function createGroup(){
+  const m = $('#home-msg'), name = $('#gname').value.trim();
+  if (!name) return msg(m, 'תנו שם לקבוצה.', 'err');
+  const btn = $('#create-group'); btn.disabled = true;
+  try{
+    const id = newGroupId();
+    await saveKey('grp:' + id, JSON.stringify({name, at: new Date().toISOString()}));
+    justCreated = true;
+    location.hash = 'g=' + id;
+  }catch(e){ msg(m, 'פתיחת הקבוצה נכשלה. נסו שוב.', 'err'); }
+  finally{ btn.disabled = false; }
+}
+async function copyLink(){
+  const b = $('#copy');
+  try{ await navigator.clipboard.writeText(groupUrl(group.id)); b.textContent = 'הועתק'; }
+  catch(e){ prompt('העתיקו את הקישור:', groupUrl(group.id)); }
+  setTimeout(() => b.textContent = 'העתקת קישור', 2000);
+}
+function showTab(t){
+  current = t;
+  ['mine','board'].forEach(x => $('#panel-' + x).hidden = x !== t);
+  $('#tab-mine').setAttribute('aria-selected', t === 'mine');
+  $('#tab-board').setAttribute('aria-selected', t === 'board');
+  if (t === 'board') refreshBoard();
+}
+async function refreshBoard(){
+  if (!group) return;
+  try{ await loadAll(); renderBoard(); }
+  catch(e){ $('#board').innerHTML = '<p class="empty">הטעינה נכשלה. בדקו את החיבור ורעננו.</p>'; }
+}
+function plural(n, one, two, many){ return n === 1 ? one : n === 2 ? two : `${n} ${many}`; }
+const and = x => /^\d/.test(x) ? 'ו-' + x : 'ו' + x;
+function tick(){
+  const ms = deadline - Date.now();
+  if (ms <= 0){
+    $('#clock').textContent = 'הקלפיות נסגרו. ההימורים נעולים.';
+    $('#mine-fs').disabled = true;
+    $('#save').hidden = true;
+    $('#load-mine').hidden = true;
+    return;
+  }
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+  const txt = d > 0 ? `${plural(d,'יום','יומיים','ימים')} ${and(plural(h,'שעה','שעתיים','שעות'))}`
+            : h > 0 ? `${plural(h,'שעה','שעתיים','שעות')} ${and(plural(m,'דקה','שתי דקות','דקות'))}`
+            : plural(Math.max(m,1),'דקה','שתי דקות','דקות');
+  $('#clock').textContent = `הקלפיות נסגרות בעוד ${txt}`;
+}
+
+$('#tab-mine').onclick = () => showTab('mine');
+$('#tab-board').onclick = () => showTab('board');
+$('#save').onclick = saveMine;
+$('#load-mine').onclick = loadMine;
+$('#create-group').onclick = createGroup;
+$('#gname').addEventListener('keydown', e => { if (e.key === 'Enter') createGroup(); });
+$('#copy').onclick = copyLink;
+$('#open-admin').onclick = openAdmin;
+$('#admin-back').onclick = () => group ? showScreen('app') : showHome();
+$('#pin-go').onclick = enterAdmin;
+$('#pin').addEventListener('keydown', e => { if (e.key === 'Enter') enterAdmin(); });
+$('#save-results').onclick = saveResults;
+$('#share-mine').onclick = () => mySaved && openShare(mySaved);
+$('#board').addEventListener('click', e => {
+  const b = e.target.closest('[data-share]');
+  if (b && preds[b.dataset.share]) openShare(preds[b.dataset.share]);
+});
+$('#sheet-send').onclick = sendShare;
+$('#sheet-close').onclick = () => $('#sheet').hidden = true;
+$('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') $('#sheet').hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#sheet').hidden = true; });
+window.addEventListener('hashchange', boot);
+tick(); setInterval(tick, 30000);
+setInterval(() => { if (group && current === 'board' && !$('#app').hidden) refreshBoard(); }, 60000);
+boot();
+</script>
+</body>
+</html>
